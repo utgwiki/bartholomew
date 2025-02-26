@@ -1,0 +1,19 @@
+{
+  "name": "announcer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "announcer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.8.1",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "fs": "^0.0.1-security"
+  }
+}
