@@ -4,9 +4,9 @@ const fs = require("fs")
 require("dotenv").config();
 
 const TOKEN = process.env.TOKEN
-const CHANNEL_ID = "1344253644131930123"
-const UNIVERSE_ID = "4864117649";
-const MILESTONE_FREQUENCY = 100
+const CHANNEL_ID = process.env.CHANNELID
+const UNIVERSE_ID = process.env.UNIVERSEID
+const MILESTONE_FREQUENCY = process.env.FREQUENCY
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
