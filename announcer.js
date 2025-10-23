@@ -5,13 +5,13 @@ require("dotenv").config();
 
 const TOKEN = process.env.TOKEN;
 const MILESTONE_FREQUENCY = parseInt(process.env.FREQUENCY);
+const path = './visitchecker.json';
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
 let lastAnnouncedVisits = {};
-const path = './lastAnnouncedVisit.json';
 
 function loadLastAnnouncedVisits() {
     if (fs.existsSync(path)) {
@@ -32,7 +32,6 @@ function getGamesFromEnv() {
     // Base game
     if (process.env.UNIVERSEID && process.env.CHANNELID) {
         games.push({
-            name: process.env.GAMENAME || "Game 1",
             universeId: process.env.UNIVERSEID,
             channelId: process.env.CHANNELID,
         });
@@ -43,9 +42,8 @@ function getGamesFromEnv() {
         index++;
         const universe = process.env[`UNIVERSEID_${index}`];
         const channel = process.env[`CHANNELID_${index}`];
-        const name = process.env[`GAMENAME_${index}`] || `Game ${index}`;
         if (!universe || !channel) break;
-        games.push({ name, universeId: universe, channelId: channel });
+        games.push({ universeId: universe, channelId: channel });
     }
 
     return games;
@@ -55,22 +53,34 @@ async function checkMilestone(game) {
     try {
         const response = await axios.get(`https://games.roblox.com/v1/games?universeIds=${game.universeId}`);
         const data = response.data.data[0];
-        if (!data) return console.error(`No data for ${game.name}`);
+        if (!data) return console.error(`No data for Universe ID ${game.universeId}`);
 
         const visitCount = data.visits;
-        const lastVisit = lastAnnouncedVisits[game.universeId] || 0;
-        const nextMilestone = Math.floor(visitCount / MILESTONE_FREQUENCY) * MILESTONE_FREQUENCY;
 
-        if (visitCount >= lastVisit + MILESTONE_FREQUENCY) {
-            lastAnnouncedVisits[game.universeId] = nextMilestone;
-            const channel = await client.channels.fetch(game.channelId);
-            await channel.send(`${game.name} has reached **${nextMilestone.toLocaleString()}** visits!`);
+        // Initialize record if missing in JSON
+        if (!lastAnnouncedVisits[game.universeId]) {
+            lastAnnouncedVisits[game.universeId] = {
+                name: `Game ${game.universeId}`, // default name if JSON missing
+                lastVisit: 0
+            };
             saveLastAnnouncedVisits();
         }
 
-        console.log(`${game.name}: ${visitCount} visits`);
+        const lastVisit = lastAnnouncedVisits[game.universeId].lastVisit;
+        const gameName = lastAnnouncedVisits[game.universeId].name;
+        const nextMilestone = Math.floor(visitCount / MILESTONE_FREQUENCY) * MILESTONE_FREQUENCY;
+
+        if (visitCount >= lastVisit + MILESTONE_FREQUENCY) {
+            lastAnnouncedVisits[game.universeId].lastVisit = nextMilestone;
+
+            const channel = await client.channels.fetch(game.channelId);
+            await channel.send(`${gameName} has reached **${nextMilestone.toLocaleString()}** visits!`);
+            saveLastAnnouncedVisits();
+        }
+
+        console.log(`${gameName}: ${visitCount} visits`);
     } catch (error) {
-        console.error(`Error checking ${game.name}:`, error.message);
+        console.error(`Error checking Universe ID ${game.universeId}:`, error.message);
     }
 }
 
