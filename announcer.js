@@ -56,29 +56,61 @@ async function checkMilestone(game) {
         if (!data) return console.error(`No data for Universe ID ${game.universeId}`);
 
         const visitCount = data.visits;
+        const currentName = data.name;
+        const currentUpdated = data.updated; // The API field for the last update timestamp
 
-        // Initialize record if missing in JSON
-        if (!lastAnnouncedVisits[game.universeId]) {
-            lastAnnouncedVisits[game.universeId] = {
-                name: `Game ${game.universeId}`, // default name if JSON missing
-                lastVisit: 0
-            };
-            saveLastAnnouncedVisits();
+        // Initialize record if missing or ensure new fields are present
+        let record = lastAnnouncedVisits[game.universeId] || {};
+        let hasChanges = false;
+        
+        // --- 1. GAME NAME UPDATE ---
+        if (record.name !== currentName) {
+            record.name = currentName;
+            hasChanges = true;
         }
 
-        const lastVisit = lastAnnouncedVisits[game.universeId].lastVisit;
-        const gameName = lastAnnouncedVisits[game.universeId].name;
+        // Initialize lastVisit if new game
+        if (typeof record.lastVisit === 'undefined') {
+            record.lastVisit = 0;
+            hasChanges = true;
+        }
+
+        // --- 2. GAME UPDATE (TIMESTAMP) CHECK ---
+        const previousUpdated = record.lastUpdatedTimestamp;
+        const channel = await client.channels.fetch(game.channelId);
+
+        if (previousUpdated && previousUpdated !== currentUpdated) {
+            // New update detected!
+            
+            // CONVERSION TO UNIX TIMESTAMP
+            const unixTimestamp = Math.floor(new Date(currentUpdated).getTime() / 1000);
+            
+            await channel.send(`**${record.name}** has received an **update** <t:${unixTimestamp}:R>!`);
+            record.lastUpdatedTimestamp = currentUpdated;
+            hasChanges = true;
+        } else if (typeof previousUpdated === 'undefined') {
+            // First time running or new game, just initialize the timestamp without announcement
+            record.lastUpdatedTimestamp = currentUpdated;
+            hasChanges = true;
+        }
+
+        // --- 3. VISITS MILESTONE CHECK ---
+        const lastVisit = record.lastVisit;
         const nextMilestone = Math.floor(visitCount / MILESTONE_FREQUENCY) * MILESTONE_FREQUENCY;
 
         if (visitCount >= lastVisit + MILESTONE_FREQUENCY) {
-            lastAnnouncedVisits[game.universeId].lastVisit = nextMilestone;
+            record.lastVisit = nextMilestone;
+            await channel.send(`**${record.name}** has reached **${nextMilestone.toLocaleString()}** visits!`);
+            hasChanges = true;
+        }
 
-            const channel = await client.channels.fetch(game.channelId);
-            await channel.send(`${gameName} has reached **${nextMilestone.toLocaleString()}** visits!`);
+        // Save the updated record if any changes occurred (name, update, or visit milestone)
+        if (hasChanges) {
+            lastAnnouncedVisits[game.universeId] = record;
             saveLastAnnouncedVisits();
         }
 
-        console.log(`${gameName}: ${visitCount} visits`);
+        console.log(`${record.name}: ${visitCount} visits, Last Updated: ${currentUpdated}`);
     } catch (error) {
         console.error(`Error checking Universe ID ${game.universeId}:`, error.message);
     }
@@ -91,10 +123,13 @@ client.once("ready", () => {
     const games = getGamesFromEnv();
     if (games.length === 0) return console.error("No valid UNIVERSEID/CHANNELID pairs found in .env");
 
+    // Initial check
     games.forEach(checkMilestone);
+    
+    // Set up the interval for continuous checking (every 5 minutes)
     setInterval(() => {
         games.forEach(checkMilestone);
-    }, 300000);
+    }, 300000); 
 });
 
 client.login(TOKEN);
