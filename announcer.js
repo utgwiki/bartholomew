@@ -96,12 +96,12 @@ async function checkMilestone(game) {
             
             // Generate the list of new places with names and links
             const newPlacesList = newPlaceIds.map(id => {
-                const name = currentPlaceMap[id] || `Unknown Place (${id})`;
-                return `[${name}](https://www.roblox.com/games/${id})`;
+                const name = currentPlaceMap[id] || `- Unknown Place (${id})`;
+                return `- [${name}](<https://www.roblox.com/games/${id}>)`;
             }).join('\n');
             
             // Construct the final announcement message
-            const message = `**${record.name}** has ${placeCount} new subpage${placeCount > 1 ? 's' : ''}!\n` +
+            const message = `**${record.name}** has ${placeCount} new subplace${placeCount > 1 ? 's' : ''}!\n` +
                             `${newPlacesList}`;
             
             await channel.send(message);
