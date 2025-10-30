@@ -164,7 +164,7 @@ client.once("ready", () => {
     // Set up the interval for continuous checking (every 5 minutes)
     setInterval(() => {
         games.forEach(checkMilestone);
-    }, 180000); 
+    }, 300000); 
 });
 
 client.login(TOKEN);
