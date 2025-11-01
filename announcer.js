@@ -145,7 +145,8 @@ async function checkMilestone(game) {
             saveLastAnnouncedVisits();
         }
 
-        console.log(`${record.name}: ${visitCount} visits, Places: ${currentPlaceIds.length}`);
+        const lastUpdatedReadable = new Date(currentUpdated).toLocaleString();
+        console.log(`${record.name}: ${visitCount} visits, Places: ${currentPlaceIds.length}, Last Updated: ${currentUpdated}`);
     } catch (error) {
         console.error(`Error checking Universe ID ${game.universeId}:`, error.message);
     }
@@ -161,10 +162,10 @@ client.once("ready", () => {
     // Initial check
     games.forEach(checkMilestone);
     
-    // Set up the interval for continuous checking (every 5 minutes)
+    // Set up the interval for continuous checking (every 3 minutes)
     setInterval(() => {
         games.forEach(checkMilestone);
-    }, 300000); 
+    }, 180000); 
 });
 
 client.login(TOKEN);
