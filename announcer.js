@@ -121,7 +121,7 @@ async function checkMilestone(game) {
             // New update detected!
             const unixTimestamp = Math.floor(new Date(currentUpdated).getTime() / 1000);
             
-            await channel.send(`<@&1360880411114209340> **${record.name}** updated <t:${unixTimestamp}:R>!`);
+            await channel.send(`**${record.name}** updated <t:${unixTimestamp}:R>!`);
             record.lastUpdatedTimestamp = currentUpdated;
             hasChanges = true;
         } else if (typeof previousUpdated === 'undefined') {
